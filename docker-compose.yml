@@ -14,12 +14,21 @@ services:
       - HOST=0.0.0.0
       - ENVIRONMENT=local
       - LOG_LEVEL=ERROR
+      # Database configuration - defaults to postgres container
+      - DB_PROVIDER=${DB_PROVIDER:-postgres}
+      - DB_HOST=${DB_HOST:-postgres}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME:-cognee_db}
+      - DB_USERNAME=${DB_USERNAME:-cognee}
+      - DB_PASSWORD=${DB_PASSWORD:-cognee}
     extra_hosts:
       # Allows the container to reach your local machine using "host.docker.internal" instead of "localhost"
       - "host.docker.internal:host-gateway"
     ports:
       - 8000:8000
       - 5678:5678 # Debugger port
+    depends_on:
+      - postgres
     deploy:
       resources:
         limits:
@@ -44,8 +53,8 @@ services:
       - LOG_LEVEL=INFO
       - TRANSPORT_MODE=sse
       # Database configuration - should match the main cognee service
-      - DB_PROVIDER=${DB_PROVIDER:-sqlite}
-      - DB_HOST=${DB_HOST:-host.docker.internal}
+      - DB_PROVIDER=${DB_PROVIDER:-postgres}
+      - DB_HOST=${DB_HOST:-postgres}
       - DB_PORT=${DB_PORT:-5432}
       - DB_NAME=${DB_NAME:-cognee_db}
       - DB_USERNAME=${DB_USERNAME:-cognee}
@@ -56,8 +65,10 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
-      - "8000:8000" # MCP port
-      - "5678:5678" # MCP debugger port
+      - "8001:8000" # MCP port (changed to avoid conflict with main cognee service)
+      - "5679:5678" # MCP debugger port (changed to avoid conflict)
+    depends_on:
+      - postgres
     deploy:
       resources:
         limits:
@@ -70,6 +81,8 @@ services:
     container_name: frontend
     profiles:
         - ui
+    depends_on:
+      - cognee
     build:
       context: ./cognee-frontend
       dockerfile: Dockerfile
@@ -117,17 +130,22 @@ services:
   postgres:
     image: pgvector/pgvector:pg17
     container_name: postgres
-    profiles:
-      - postgres
+    # Removed from profile so it runs by default for production deployments
     environment:
-      POSTGRES_USER: cognee
-      POSTGRES_PASSWORD: cognee
-      POSTGRES_DB: cognee_db
-      # - postgres_data:/var/lib/postgresql/data
+      POSTGRES_USER: ${POSTGRES_USER:-cognee}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cognee}
+      POSTGRES_DB: ${POSTGRES_DB:-cognee_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     ports:
       - 5432:5432
     networks:
       - cognee-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cognee"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7-alpine
