@@ -3,41 +3,36 @@
 ## Port Conflict Resolution
 
 ### Problem
+Port conflicts occur when your Coolify server already has services using the same ports:
+
 ```
+Error: Bind for 0.0.0.0:8000 failed: port is already allocated
 Error: Bind for 0.0.0.0:5432 failed: port is already allocated
 ```
 
-This happens when your Coolify server already has a service using port 5432 (usually another Postgres instance).
+### Solution: Configure Alternative Ports
 
-### Solution Options
-
-#### Option 1: Use a Different Port (Recommended)
-
-In Coolify, add this environment variable:
+All service ports are now configurable via environment variables. Add these in Coolify:
 
 ```env
+# Main API (default: 8000) - REQUIRED, this is your main service
+COGNEE_PORT=8080
+
+# MCP Server (default: 8001) - only if using MCP profile
+COGNEE_MCP_PORT=8081
+
+# Frontend (default: 3000) - only if using UI profile
+FRONTEND_PORT=3001
+
+# Postgres (default: 5432)
 POSTGRES_EXTERNAL_PORT=5433
+
+# Debug ports (usually not needed in production)
+COGNEE_DEBUG_PORT=5678
+COGNEE_MCP_DEBUG_PORT=5679
 ```
 
-This will map the external port to 5433 instead of 5432. The internal services will still connect via `postgres:5432` on the Docker network.
-
-#### Option 2: Disable External Port Exposure (Most Secure)
-
-If you don't need external database access, remove port exposure entirely:
-
-In Coolify, set:
-```env
-POSTGRES_EXTERNAL_PORT=
-```
-
-Or comment out the ports section in docker-compose.yml:
-```yaml
-postgres:
-  # ports:
-  #   - "${POSTGRES_EXTERNAL_PORT:-5432}:5432"
-```
-
-**Note:** Services inside the Docker network will still communicate fine via `postgres:5432`.
+**Important:** Only set the ports you actually need. Internal communication between services happens via Docker network names (`postgres:5432`, etc.) and doesn't depend on external ports.
 
 ## Complete Coolify Environment Variables
 
@@ -56,10 +51,16 @@ DB_PASSWORD=your_secure_password_here
 POSTGRES_USER=cognee
 POSTGRES_PASSWORD=your_secure_password_here
 POSTGRES_DB=cognee_db
-POSTGRES_EXTERNAL_PORT=5433  # Change this if 5432 is taken, or leave empty to disable
+POSTGRES_EXTERNAL_PORT=5433  # Change if 5432 conflicts
 
-# Optional: Change other service ports if needed
-# (Currently cognee=8000, cognee-mcp=8001, frontend=3000)
+# Service Ports (change if defaults conflict with existing services)
+COGNEE_PORT=8080              # Main API (change if 8000 conflicts)
+COGNEE_MCP_PORT=8081          # MCP Server (if using mcp profile)
+FRONTEND_PORT=3001            # Frontend (if using ui profile)
+
+# Debug Ports (optional, usually not needed in production)
+COGNEE_DEBUG_PORT=5678
+COGNEE_MCP_DEBUG_PORT=5679
 ```
 
 ## Service Architecture
@@ -92,10 +93,12 @@ All services communicate via the internal `cognee-network`:
 
 | Service | Internal Port | Default External | Configurable Via |
 |---------|--------------|------------------|------------------|
-| cognee | 8000 | 8000 | Hardcoded |
-| cognee-mcp | 8000 | 8001 | Hardcoded |
-| frontend | 3000 | 3000 | Hardcoded |
+| cognee | 8000 | 8000 | `COGNEE_PORT` |
+| cognee-mcp | 8000 | 8001 | `COGNEE_MCP_PORT` |
+| frontend | 3000 | 3000 | `FRONTEND_PORT` |
 | postgres | 5432 | 5432 | `POSTGRES_EXTERNAL_PORT` |
+| cognee-debug | 5678 | 5678 | `COGNEE_DEBUG_PORT` |
+| mcp-debug | 5678 | 5679 | `COGNEE_MCP_DEBUG_PORT` |
 | neo4j | 7474, 7687 | 7474, 7687 | Hardcoded (profile) |
 | chromadb | 8000 | 3002 | Hardcoded (profile) |
 | redis | 6379 | 6379 | Hardcoded (profile) |
@@ -109,43 +112,64 @@ All services communicate via the internal `cognee-network`:
 
 2. **Set Environment Variables**
    ```env
+   # Database
    DB_PROVIDER=postgres
    DB_HOST=postgres
    DB_PORT=5432
    DB_NAME=cognee_db
    DB_USERNAME=cognee
    DB_PASSWORD=secure_password_123
+   
+   # Postgres
    POSTGRES_USER=cognee
    POSTGRES_PASSWORD=secure_password_123
    POSTGRES_DB=cognee_db
    POSTGRES_EXTERNAL_PORT=5433
+   
+   # Service Ports (adjust based on what's available on your server)
+   COGNEE_PORT=8080           # Change from default 8000
+   COGNEE_MCP_PORT=8081      # If using MCP
+   FRONTEND_PORT=3001        # If using UI
    ```
 
 3. **Deploy**
    - Click "Deploy"
-   - Watch logs for any errors
+   - Watch logs for any port conflict errors
+   - If you still see conflicts, adjust the port numbers above
    - Postgres will start automatically (no profile needed)
 
 4. **Access Your Services**
-   - Main API: `https://your-domain.com:8000`
-   - MCP Server (if profile enabled): `https://your-domain.com:8001`
-   - Frontend (if profile enabled): `https://your-domain.com:3000`
+   - Main API: `https://your-domain.com:8080` (or whatever you set `COGNEE_PORT` to)
+   - MCP Server (if profile enabled): `https://your-domain.com:8081`
+   - Frontend (if profile enabled): `https://your-domain.com:3001`
 
 ## Troubleshooting
 
 ### Still Getting Port Conflicts?
 
-Check what's using the port:
+Check what's using the port on your server:
 ```bash
-sudo netstat -tlnp | grep 5432
+sudo netstat -tlnp | grep 8000  # Check main API port
+sudo netstat -tlnp | grep 5432  # Check postgres port
+sudo lsof -i :8000              # Alternative command
 ```
 
-Or in Coolify, try these ports instead:
+Try different port numbers until you find available ones:
 ```env
+# Example: If 8000 and 5432 are taken, try:
+COGNEE_PORT=8080
+COGNEE_PORT=8888
+COGNEE_PORT=9000
+
 POSTGRES_EXTERNAL_PORT=5433
 POSTGRES_EXTERNAL_PORT=5434
 POSTGRES_EXTERNAL_PORT=54320
 ```
+
+**Common Coolify conflicts:**
+- Port 8000: Often used by other APIs
+- Port 5432: Usually taken by system Postgres
+- Port 3000: Commonly used by Node.js apps
 
 ### Database Connection Issues?
 
