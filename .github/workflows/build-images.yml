@@ -25,6 +25,18 @@ jobs:
       packages: write
 
     steps:
+      - name: Free disk space
+        run: |
+          echo "=== Before cleanup ==="
+          df -h
+          echo "Removing unused preinstalled software..."
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache || true
+          sudo apt-get autoremove -y || true
+          sudo apt-get clean || true
+          docker system prune -af --volumes || true
+          echo "=== After cleanup ==="
+          df -h
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -69,6 +81,18 @@ jobs:
       packages: write
 
     steps:
+      - name: Free disk space
+        run: |
+          echo "=== Before cleanup ==="
+          df -h
+          echo "Removing unused preinstalled software..."
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache || true
+          sudo apt-get autoremove -y || true
+          sudo apt-get clean || true
+          docker system prune -af --volumes || true
+          echo "=== After cleanup ==="
+          df -h
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -113,6 +137,18 @@ jobs:
       packages: write
 
     steps:
+      - name: Free disk space
+        run: |
+          echo "=== Before cleanup ==="
+          df -h
+          echo "Removing unused preinstalled software..."
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache || true
+          sudo apt-get autoremove -y || true
+          sudo apt-get clean || true
+          docker system prune -af --volumes || true
+          echo "=== After cleanup ==="
+          df -h
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
