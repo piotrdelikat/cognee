@@ -20,7 +20,7 @@ services:
       - DB_PROVIDER=${DB_PROVIDER:-postgres}
       - DB_HOST=${DB_HOST:-postgres}
       - DB_PORT=${DB_PORT:-5432}
-      - DB_NAME=${DB_NAME:-cognee_db}
+      - DB_NAME=${DB_NAME:-cognee}
       - DB_USERNAME=${DB_USERNAME:-cognee}
       - DB_PASSWORD=${DB_PASSWORD:-cognee}
     extra_hosts:
@@ -60,7 +60,7 @@ services:
       - DB_PROVIDER=${DB_PROVIDER:-postgres}
       - DB_HOST=${DB_HOST:-postgres}
       - DB_PORT=${DB_PORT:-5432}
-      - DB_NAME=${DB_NAME:-cognee_db}
+      - DB_NAME=${DB_NAME:-cognee}
       - DB_USERNAME=${DB_USERNAME:-cognee}
       - DB_PASSWORD=${DB_PASSWORD:-cognee}
       # MCP specific configuration
@@ -146,7 +146,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-cognee}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cognee}
-      POSTGRES_DB: ${POSTGRES_DB:-cognee_db}
+      POSTGRES_DB: ${POSTGRES_DB:-cognee}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:

@@ -22,7 +22,7 @@ services:
       - DB_PROVIDER=${DB_PROVIDER:-postgres}
       - DB_HOST=${DB_HOST:-postgres}
       - DB_PORT=${DB_PORT:-5432}
-      - DB_NAME=${DB_NAME:-cognee_db}
+      - DB_NAME=${DB_NAME:-cognee}
       - DB_USERNAME=${DB_USERNAME:-cognee}
       - DB_PASSWORD=${DB_PASSWORD:-cognee}
     extra_hosts:
@@ -33,7 +33,8 @@ services:
       - "${COGNEE_PORT:-8000}:8000"
       - "${COGNEE_DEBUG_PORT:-5678}:5678"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     deploy:
       resources:
         limits:
@@ -61,7 +62,7 @@ services:
       - DB_PROVIDER=${DB_PROVIDER:-postgres}
       - DB_HOST=${DB_HOST:-postgres}
       - DB_PORT=${DB_PORT:-5432}
-      - DB_NAME=${DB_NAME:-cognee_db}
+      - DB_NAME=${DB_NAME:-cognee}
       - DB_USERNAME=${DB_USERNAME:-cognee}
       - DB_PASSWORD=${DB_PASSWORD:-cognee}
       # MCP specific configuration
@@ -74,7 +75,8 @@ services:
       - "${COGNEE_MCP_PORT:-8001}:8000"
       - "${COGNEE_MCP_DEBUG_PORT:-5679}:5678"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     deploy:
       resources:
         limits:
@@ -141,7 +143,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-cognee}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cognee}
-      POSTGRES_DB: ${POSTGRES_DB:-cognee_db}
+      POSTGRES_DB: ${POSTGRES_DB:-cognee}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:

@@ -13,7 +13,7 @@ class RelationalConfig(BaseSettings):
     """
 
     db_path: str = ""
-    db_name: str = "cognee_db"
+    db_name: str = "cognee"
     db_host: Union[str, None] = None  # "localhost"
     db_port: Union[str, None] = None  # "5432"
     db_username: Union[str, None] = None  # "cognee"

@@ -43,18 +43,18 @@ Set these in your Coolify project's environment variables section:
 DB_PROVIDER=postgres
 DB_HOST=postgres
 DB_PORT=5432
-DB_NAME=cognee_db
+DB_NAME=cognee              # ⚠️ CRITICAL: Must match POSTGRES_DB
 DB_USERNAME=cognee
 DB_PASSWORD=your_secure_password_here
 
 # Postgres Configuration
 POSTGRES_USER=cognee
-POSTGRES_PASSWORD=your_secure_password_here
-POSTGRES_DB=cognee_db
-POSTGRES_EXTERNAL_PORT=5433  # Change if 5432 conflicts
+POSTGRES_PASSWORD=your_secure_password_here  # ⚠️ Must match DB_PASSWORD
+POSTGRES_DB=cognee          # ⚠️ CRITICAL: Must match DB_NAME
 
-# Service Ports (change if defaults conflict with existing services)
+# Port Configuration (change if defaults conflict with existing services)
 COGNEE_PORT=8080              # Main API (change if 8000 conflicts)
+POSTGRES_EXTERNAL_PORT=5433   # Change if 5432 conflicts
 COGNEE_MCP_PORT=8081          # MCP Server (if using mcp profile)
 FRONTEND_PORT=3001            # Frontend (if using ui profile)
 
@@ -62,6 +62,13 @@ FRONTEND_PORT=3001            # Frontend (if using ui profile)
 COGNEE_DEBUG_PORT=5678
 COGNEE_MCP_DEBUG_PORT=5679
 ```
+
+**⚠️ Critical Requirements:**
+- `DB_NAME` and `POSTGRES_DB` **MUST be identical** (both `cognee`)
+- `DB_PASSWORD` and `POSTGRES_PASSWORD` **MUST be identical**
+- If these don't match, you'll get "database does not exist" errors
+
+**📖 Having issues?** See [COOLIFY_TROUBLESHOOTING.md](./COOLIFY_TROUBLESHOOTING.md) for detailed solutions.
 
 ## Service Architecture
 
@@ -116,14 +123,14 @@ All services communicate via the internal `cognee-network`:
    DB_PROVIDER=postgres
    DB_HOST=postgres
    DB_PORT=5432
-   DB_NAME=cognee_db
+   DB_NAME=cognee
    DB_USERNAME=cognee
    DB_PASSWORD=secure_password_123
    
    # Postgres
    POSTGRES_USER=cognee
    POSTGRES_PASSWORD=secure_password_123
-   POSTGRES_DB=cognee_db
+   POSTGRES_DB=cognee
    POSTGRES_EXTERNAL_PORT=5433
    
    # Service Ports (adjust based on what's available on your server)
