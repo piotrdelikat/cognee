@@ -147,7 +147,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - 5432:5432
+      # Configurable external port - set POSTGRES_EXTERNAL_PORT to change or leave empty to disable external access
+      - "${POSTGRES_EXTERNAL_PORT:-5432}:5432"
     networks:
       - cognee-network
     healthcheck:
