@@ -1,22 +1,20 @@
-# Development Docker Compose - builds images locally
-# For production deployments (Coolify, etc), use: docker-compose.production.yml
-# See PRODUCTION_DEPLOYMENT.md for details
+# Production docker-compose using pre-built images from GitHub Container Registry
+# Usage: docker-compose -f docker-compose.production.yml up -d
 
 services:
   cognee:
     container_name: cognee
+    # Use pre-built image instead of building
+    image: ghcr.io/${GITHUB_USERNAME:-your-username}/cognee:${IMAGE_TAG:-latest}
     networks:
       - cognee-network
-    build:
-      context: .
-      dockerfile: Dockerfile
     volumes:
       - ./cognee:/app/cognee
       - .env:/app/.env
     environment:
       - DEBUG=false # Change to true if debugging
       - HOST=0.0.0.0
-      - ENVIRONMENT=local
+      - ENVIRONMENT=production
       - LOG_LEVEL=ERROR
       # Database configuration - defaults to postgres container
       - DB_PROVIDER=${DB_PROVIDER:-postgres}
@@ -32,28 +30,29 @@ services:
       - 8000:8000
       - 5678:5678 # Debugger port
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     deploy:
       resources:
         limits:
           cpus: "4.0"
           memory: 8GB
+    restart: unless-stopped
 
   # Cognee MCP Server - Model Context Protocol server for IDE integration
   cognee-mcp:
     container_name: cognee-mcp
+    # Use pre-built image instead of building
+    image: ghcr.io/${GITHUB_USERNAME:-your-username}/cognee-mcp:${IMAGE_TAG:-latest}
     profiles:
       - mcp
     networks:
       - cognee-network
-    build:
-      context: .
-      dockerfile: cognee-mcp/Dockerfile
     volumes:
       - .env:/app/.env
     environment:
       - DEBUG=false # Change to true if debugging
-      - ENVIRONMENT=local
+      - ENVIRONMENT=production
       - LOG_LEVEL=INFO
       - TRANSPORT_MODE=sse
       # Database configuration - should match the main cognee service
@@ -72,24 +71,25 @@ services:
       - "8001:8000" # MCP port (changed to avoid conflict with main cognee service)
       - "5679:5678" # MCP debugger port (changed to avoid conflict)
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     deploy:
       resources:
         limits:
           cpus: "2.0"
           memory: 4GB
+    restart: unless-stopped
 
   # NOTE: Frontend is a work in progress and supports minimum amount of features required to be functional.
   # If you want to use Cognee with a UI environment you can integrate the Cognee MCP Server into Cursor / Claude Desktop / Visual Studio Code (through Cline/Roo)
   frontend:
     container_name: frontend
+    # Use pre-built image instead of building
+    image: ghcr.io/${GITHUB_USERNAME:-your-username}/cognee-frontend:${IMAGE_TAG:-latest}
     profiles:
         - ui
     depends_on:
       - cognee
-    build:
-      context: ./cognee-frontend
-      dockerfile: Dockerfile
     volumes:
       - ./cognee-frontend/src:/app/src
       - ./cognee-frontend/public:/app/public
@@ -98,6 +98,7 @@ services:
       # - 9229:9229 # Debugging
     networks:
       - cognee-network
+    restart: unless-stopped
 
   neo4j:
     image: neo4j:latest
@@ -112,6 +113,9 @@ services:
       - NEO4J_PLUGINS=["apoc", "graph-data-science"]
     networks:
       - cognee-network
+    volumes:
+      - neo4j_data:/data
+    restart: unless-stopped
 
   chromadb:
     image: chromadb/chroma:0.6.3
@@ -130,6 +134,7 @@ services:
       - cognee-network
     ports:
       - "3002:8000"
+    restart: unless-stopped
 
   postgres:
     image: pgvector/pgvector:pg17
@@ -150,6 +155,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
@@ -163,11 +169,13 @@ services:
     volumes:
       - redis_data:/data
     command: [ "redis-server", "--appendonly", "yes" ]
-
+    restart: unless-stopped
 
   redisinsight:
     image: redislabs/redisinsight:latest
     container_name: redisinsight
+    profiles:
+      - redis
     restart: always
     ports:
       - "5540:5540"
@@ -182,4 +190,5 @@ networks:
 volumes:
   chromadb_data:
   postgres_data:
+  neo4j_data:
   redis_data:
